@@ -1,2 +1,3 @@
-# cosmos-sbt-plugin
-An SBT plugin for common build settings of Cosmos and related projects
+# sbt-dcos
+
+An SBT plugin for common build settings of Scala projects in DC/OS.
