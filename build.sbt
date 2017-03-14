@@ -1,10 +1,14 @@
-import com.mesosphere.sbt.BuildPlugin.publishSettings
+import com.mesosphere.sbt.BuildPlugin
+
+val projectScalaVersion = "2.10.6"
+val projectVersion = "0.1.0-SNAPSHOT"
 
 lazy val root = project.in(file("."))
   .settings(
     name := "sbt-dcos",
-    version := "0.1.0-SNAPSHOT",
+    version := projectVersion,
     organization := "com.mesosphere",
+    scalaVersion := projectScalaVersion,
     sbtPlugin := true
   )
   .settings(
@@ -13,7 +17,7 @@ lazy val root = project.in(file("."))
       addSbtPlugin(organization % name % revision)
     }
   )
-  .settings(publishSettings)
+  .settings(BuildPlugin.publishSettings)
   .settings(
     pomExtra :=
       <url>https://dcos.io</url>
@@ -40,3 +44,5 @@ lazy val root = project.in(file("."))
         </developer>
       </developers>
   )
+
+val _ = BuildPlugin.teamCityReport(scalaVersion = projectScalaVersion, version = projectVersion)

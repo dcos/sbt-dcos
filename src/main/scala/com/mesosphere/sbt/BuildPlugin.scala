@@ -7,7 +7,7 @@ import scoverage.ScoverageKeys._
 
 object BuildPlugin extends AutoPlugin {
 
-  val teamcityVersion = sys.env.get("TEAMCITY_VERSION")
+  val teamcityVersion: Option[String] = sys.env.get("TEAMCITY_VERSION")
 
   override def trigger: PluginTrigger = allRequirements
 
@@ -63,5 +63,18 @@ object BuildPlugin extends AutoPlugin {
       }
     }
   )
+
+  def teamCityReport(scalaVersion: String, version: String): Unit = {
+    teamcityVersion.foreach { _ =>
+      // add some info into the teamcity build context so that they can be used by later steps
+      reportTeamCityParameter("SCALA_VERSION", scalaVersion)
+      reportTeamCityParameter("PROJECT_VERSION", version)
+    }
+  }
+
+  def reportTeamCityParameter(key: String, value: String): Unit = {
+    println(s"##teamcity[setParameter name='env.SBT_$key' value='$value']")
+    println(s"##teamcity[setParameter name='system.sbt.$key' value='$value']")
+  }
 
 }
