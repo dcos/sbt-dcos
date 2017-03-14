@@ -3,8 +3,11 @@ package com.mesosphere.sbt
 import sbt._
 import sbt.Keys._
 import scala.Ordering.Implicits._
+import scoverage.ScoverageKeys._
 
 object BuildPlugin extends AutoPlugin {
+
+  val teamcityVersion = sys.env.get("TEAMCITY_VERSION")
 
   override def trigger: PluginTrigger = allRequirements
 
@@ -44,7 +47,8 @@ object BuildPlugin extends AutoPlugin {
     },
     scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Test, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
-    scalacOptions in (Compile, doc) += "-no-link-warnings"
+    scalacOptions in (Compile, doc) += "-no-link-warnings",
+    coverageOutputTeamCity := teamcityVersion.isDefined
   )
 
   val publishSettings: Seq[Def.Setting[_]] = Seq(
