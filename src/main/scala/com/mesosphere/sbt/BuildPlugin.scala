@@ -11,12 +11,23 @@ object BuildPlugin extends AutoPlugin {
 
   override def trigger: PluginTrigger = allRequirements
 
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions ++= {
-      val parsedVersion = scalaVersion.value.split('.').toList.map(_.toInt)
+  private val parsedScalaVersion: SettingKey[List[Int]] =
+    settingKey("The project's Scala version, parsed into a list of version numbers")
 
-      val supportedTargetVersion = if (parsedVersion < List(2, 11, 5)) 7 else 8
-      val targetJvm = s"-target:jvm-1.$supportedTargetVersion"
+  private val supportedJvmVersion: SettingKey[String] =
+    settingKey("The JVM version required by this project")
+
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    parsedScalaVersion := scalaVersion.value.split('.').toList.map(_.toInt),
+    supportedJvmVersion := { if (parsedScalaVersion.value < List(2, 11, 5)) "1.7" else "1.8" },
+    javacOptions in Compile ++= Seq(
+      "-source", supportedJvmVersion.value,
+      "-target", supportedJvmVersion.value,
+      "-Xlint:unchecked",
+      "-Xlint:deprecation"
+    ),
+    scalacOptions ++= {
+      val targetJvm = s"-target:jvm-${supportedJvmVersion.value}"
 
       val commonOptions = Seq(
         "-deprecation",            // Emit warning and location for usages of deprecated APIs.
@@ -43,7 +54,7 @@ object BuildPlugin extends AutoPlugin {
         "-Ywarn-unused-import"     // Warn when imports are unused.
       )
 
-      commonOptions ++ (if (parsedVersion < List(2, 11)) Seq.empty else twoElevenOptions)
+      commonOptions ++ (if (parsedScalaVersion.value < List(2, 11)) Seq.empty else twoElevenOptions)
     },
     scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Test, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
