@@ -20,12 +20,14 @@ object BuildPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     parsedScalaVersion := scalaVersion.value.split('.').toList.map(_.toInt),
     supportedJvmVersion := { if (parsedScalaVersion.value < List(2, 11, 5)) "1.7" else "1.8" },
+
     javacOptions in Compile ++= Seq(
       "-source", supportedJvmVersion.value,
       "-target", supportedJvmVersion.value,
       "-Xlint:unchecked",
       "-Xlint:deprecation"
     ),
+
     scalacOptions ++= {
       val targetJvm = s"-target:jvm-${supportedJvmVersion.value}"
 
@@ -56,9 +58,11 @@ object BuildPlugin extends AutoPlugin {
 
       commonOptions ++ (if (parsedScalaVersion.value < List(2, 11)) Seq.empty else twoElevenOptions)
     },
+
     scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Test, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Compile, doc) += "-no-link-warnings",
+
     coverageOutputTeamCity := teamcityVersion.isDefined,
     cancelable in Global := true
   )
