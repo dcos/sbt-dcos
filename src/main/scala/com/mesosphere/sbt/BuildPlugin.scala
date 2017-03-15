@@ -65,9 +65,14 @@ object BuildPlugin extends AutoPlugin {
 
     coverageOutputTeamCity := teamcityVersion.isDefined,
     cancelable in Global := true,
+
     initialize in LocalRootProject := {
       initialize.value
-      teamCityReport(scalaVersion.value, version.value)
+      teamcityVersion.foreach { _ =>
+        // add some info into the teamcity build context so that they can be used by later steps
+        reportTeamCityParameter("SCALA_VERSION", scalaVersion.value)
+        reportTeamCityParameter("PROJECT_VERSION", version.value)
+      }
     }
   )
 
@@ -83,14 +88,6 @@ object BuildPlugin extends AutoPlugin {
       }
     }
   )
-
-  private def teamCityReport(scalaVersion: String, version: String): Unit = {
-    teamcityVersion.foreach { _ =>
-      // add some info into the teamcity build context so that they can be used by later steps
-      reportTeamCityParameter("SCALA_VERSION", scalaVersion)
-      reportTeamCityParameter("PROJECT_VERSION", version)
-    }
-  }
 
   private def reportTeamCityParameter(key: String, value: String): Unit = {
     println(s"##teamcity[setParameter name='env.SBT_$key' value='$value']")
