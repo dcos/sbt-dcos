@@ -44,5 +44,3 @@ lazy val root = project.in(file("."))
         </developer>
       </developers>
   )
-
-val _ = BuildPlugin.teamCityReport(scalaVersion = projectScalaVersion, version = projectVersion)

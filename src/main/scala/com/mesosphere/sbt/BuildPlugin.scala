@@ -64,7 +64,11 @@ object BuildPlugin extends AutoPlugin {
     scalacOptions in (Compile, doc) += "-no-link-warnings",
 
     coverageOutputTeamCity := teamcityVersion.isDefined,
-    cancelable in Global := true
+    cancelable in Global := true,
+    initialize in LocalRootProject := {
+      initialize.value
+      teamCityReport(scalaVersion.value, version.value)
+    }
   )
 
   val publishSettings: Seq[Def.Setting[_]] = Seq(
@@ -80,7 +84,7 @@ object BuildPlugin extends AutoPlugin {
     }
   )
 
-  def teamCityReport(scalaVersion: String, version: String): Unit = {
+  private def teamCityReport(scalaVersion: String, version: String): Unit = {
     teamcityVersion.foreach { _ =>
       // add some info into the teamcity build context so that they can be used by later steps
       reportTeamCityParameter("SCALA_VERSION", scalaVersion)
@@ -88,7 +92,7 @@ object BuildPlugin extends AutoPlugin {
     }
   }
 
-  def reportTeamCityParameter(key: String, value: String): Unit = {
+  private def reportTeamCityParameter(key: String, value: String): Unit = {
     println(s"##teamcity[setParameter name='env.SBT_$key' value='$value']")
     println(s"##teamcity[setParameter name='system.sbt.$key' value='$value']")
   }
