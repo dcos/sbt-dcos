@@ -59,7 +59,8 @@ object BuildPlugin extends AutoPlugin {
     scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Test, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Compile, doc) += "-no-link-warnings",
-    coverageOutputTeamCity := teamcityVersion.isDefined
+    coverageOutputTeamCity := teamcityVersion.isDefined,
+    cancelable in Global := true
   )
 
   val publishSettings: Seq[Def.Setting[_]] = Seq(
