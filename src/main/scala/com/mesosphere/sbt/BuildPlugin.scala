@@ -3,17 +3,33 @@ package com.mesosphere.sbt
 import sbt._
 import sbt.Keys._
 import scala.Ordering.Implicits._
+import scoverage.ScoverageKeys._
 
 object BuildPlugin extends AutoPlugin {
 
+  val teamcityVersion: Option[String] = sys.env.get("TEAMCITY_VERSION")
+
   override def trigger: PluginTrigger = allRequirements
 
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions ++= {
-      val parsedVersion = scalaVersion.value.split('.').toList.map(_.toInt)
+  private val parsedScalaVersion: SettingKey[List[Int]] =
+    settingKey("The project's Scala version, parsed into a list of version numbers")
 
-      val supportedTargetVersion = if (parsedVersion < List(2, 11, 5)) 7 else 8
-      val targetJvm = s"-target:jvm-1.$supportedTargetVersion"
+  private val supportedJvmVersion: SettingKey[String] =
+    settingKey("The JVM version required by this project")
+
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    parsedScalaVersion := scalaVersion.value.split('.').toList.map(_.toInt),
+    supportedJvmVersion := { if (parsedScalaVersion.value < List(2, 11, 5)) "1.7" else "1.8" },
+
+    javacOptions in Compile ++= Seq(
+      "-source", supportedJvmVersion.value,
+      "-target", supportedJvmVersion.value,
+      "-Xlint:unchecked",
+      "-Xlint:deprecation"
+    ),
+
+    scalacOptions ++= {
+      val targetJvm = s"-target:jvm-${supportedJvmVersion.value}"
 
       val commonOptions = Seq(
         "-deprecation",            // Emit warning and location for usages of deprecated APIs.
@@ -40,11 +56,24 @@ object BuildPlugin extends AutoPlugin {
         "-Ywarn-unused-import"     // Warn when imports are unused.
       )
 
-      commonOptions ++ (if (parsedVersion < List(2, 11)) Seq.empty else twoElevenOptions)
+      commonOptions ++ (if (parsedScalaVersion.value < List(2, 11)) Seq.empty else twoElevenOptions)
     },
+
     scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Test, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
-    scalacOptions in (Compile, doc) += "-no-link-warnings"
+    scalacOptions in (Compile, doc) += "-no-link-warnings",
+
+    coverageOutputTeamCity := teamcityVersion.isDefined,
+    cancelable in Global := true,
+
+    initialize in LocalRootProject := {
+      initialize.value
+      teamcityVersion.foreach { _ =>
+        // add some info into the teamcity build context so that they can be used by later steps
+        reportTeamCityParameter("SCALA_VERSION", scalaVersion.value)
+        reportTeamCityParameter("PROJECT_VERSION", version.value)
+      }
+    }
   )
 
   val publishSettings: Seq[Def.Setting[_]] = Seq(
@@ -59,5 +88,10 @@ object BuildPlugin extends AutoPlugin {
       }
     }
   )
+
+  private def reportTeamCityParameter(key: String, value: String): Unit = {
+    println(s"##teamcity[setParameter name='env.SBT_$key' value='$value']")
+    println(s"##teamcity[setParameter name='system.sbt.$key' value='$value']")
+  }
 
 }
