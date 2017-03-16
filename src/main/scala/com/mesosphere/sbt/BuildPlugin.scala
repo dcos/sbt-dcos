@@ -1,5 +1,7 @@
 package com.mesosphere.sbt
 
+import com.github.retronym.SbtOneJar._
+import com.mesosphere.cosmos.CosmosIntegrationTestServer
 import sbt._
 import sbt.Keys._
 import scala.Ordering.Implicits._
@@ -7,15 +9,15 @@ import scoverage.ScoverageKeys._
 
 object BuildPlugin extends AutoPlugin {
 
-  val teamcityVersion: Option[String] = sys.env.get("TEAMCITY_VERSION")
-
-  override def trigger: PluginTrigger = allRequirements
+  private val teamcityVersion: Option[String] = sys.env.get("TEAMCITY_VERSION")
 
   private val parsedScalaVersion: SettingKey[List[Int]] =
     settingKey("The project's Scala version, parsed into a list of version numbers")
 
   private val supportedJvmVersion: SettingKey[String] =
     settingKey("The JVM version required by this project")
+
+  override def trigger: PluginTrigger = allRequirements
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     parsedScalaVersion := scalaVersion.value.split('.').toList.map(_.toInt),
@@ -76,7 +78,22 @@ object BuildPlugin extends AutoPlugin {
     }
   )
 
-  val publishSettings: Seq[Def.Setting[_]] = Seq(
+  lazy val itSettings: Seq[Def.Setting[_]] = Defaults.itSettings ++ Seq(
+    testOptions in IntegrationTest ++= {
+      lazy val itServer = new CosmosIntegrationTestServer(
+        (javaHome in run).value.map(_.getCanonicalPath),
+        (resourceDirectories in IntegrationTest).value,
+        oneJar.value
+      )
+
+      Seq(
+        Tests.Setup(() => itServer.setup((streams in runMain).value.log)),
+        Tests.Cleanup(() => itServer.cleanup())
+      )
+    }
+  )
+
+  lazy val publishSettings: Seq[Def.Setting[_]] = Seq(
     publishMavenStyle := true,
     pomIncludeRepository := { _ => false },
     publishTo := {
