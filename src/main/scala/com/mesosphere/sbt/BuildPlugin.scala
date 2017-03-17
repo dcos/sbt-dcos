@@ -78,20 +78,28 @@ object BuildPlugin extends AutoPlugin {
     }
   )
 
-  lazy val itSettings: Seq[Def.Setting[_]] = Defaults.itSettings ++ Seq(
-    testOptions in IntegrationTest ++= {
-      lazy val itServer = new CosmosIntegrationTestServer(
-        (javaHome in run).value.map(_.getCanonicalPath),
-        (resourceDirectories in IntegrationTest).value,
-        oneJar.value
-      )
+  /** These should be added to the subproject containing the main class. */
+  def itConfigsAndSettings(mainClassName: String): (Seq[Configuration], Seq[Def.Setting[_]]) = {
+    val configs = Seq(IntegrationTest extend Test)
 
-      Seq(
-        Tests.Setup(() => itServer.setup((streams in runMain).value.log)),
-        Tests.Cleanup(() => itServer.cleanup())
-      )
-    }
-  )
+    val customSettings = Seq(
+      mainClass in oneJar := Some(mainClassName),
+      testOptions in IntegrationTest ++= {
+        lazy val itServer = new CosmosIntegrationTestServer(
+          (javaHome in run).value.map(_.getCanonicalPath),
+          (resourceDirectories in IntegrationTest).value,
+          oneJar.value
+        )
+
+        Seq(
+          Tests.Setup(() => itServer.setup((streams in runMain).value.log)),
+          Tests.Cleanup(() => itServer.cleanup())
+        )
+      }
+    )
+
+    (configs, oneJarSettings ++ Defaults.itSettings ++ customSettings)
+  }
 
   lazy val publishSettings: Seq[Def.Setting[_]] = Seq(
     publishMavenStyle := true,
