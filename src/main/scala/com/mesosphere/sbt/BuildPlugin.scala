@@ -19,6 +19,8 @@ object BuildPlugin extends AutoPlugin {
 
   override def trigger: PluginTrigger = allRequirements
 
+  override def projectConfigurations: Seq[Configuration] = Seq(IntegrationTest extend Test)
+
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     parsedScalaVersion := scalaVersion.value.split('.').toList.map(_.toInt),
     supportedJvmVersion := { if (parsedScalaVersion.value < List(2, 11, 5)) "1.7" else "1.8" },
@@ -63,26 +65,25 @@ object BuildPlugin extends AutoPlugin {
 
     scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Test, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
+    scalacOptions in (IntegrationTest, console) ~= (_ filterNot (_ == "-Ywarn-unused-import")),
     scalacOptions in (Compile, doc) += "-no-link-warnings",
 
     coverageOutputTeamCity := teamcityVersion.isDefined,
     cancelable in Global := true,
 
     initialize in LocalRootProject := {
-      initialize.value
+      val _ = initialize.value
       teamcityVersion.foreach { _ =>
         // add some info into the teamcity build context so that they can be used by later steps
         reportTeamCityParameter("SCALA_VERSION", scalaVersion.value)
         reportTeamCityParameter("PROJECT_VERSION", version.value)
       }
     }
-  )
+  ) ++ Defaults.itSettings
 
   /** These should be added to the subproject containing the main class. */
-  def itConfigsAndSettings(mainClassName: String): (Seq[Configuration], Seq[Def.Setting[_]]) = {
-    val configs = Seq(IntegrationTest extend Test)
-
-    val customSettings = Seq(
+  def itSettings(mainClassName: String): Seq[Def.Setting[_]] = {
+    oneJarSettings ++ Seq(
       mainClass in oneJar := Some(mainClassName),
       testOptions in IntegrationTest ++= {
         lazy val itServer = new CosmosIntegrationTestServer(
@@ -97,8 +98,6 @@ object BuildPlugin extends AutoPlugin {
         )
       }
     )
-
-    (configs, oneJarSettings ++ Defaults.itSettings ++ customSettings)
   }
 
   lazy val publishSettings: Seq[Def.Setting[_]] = Seq(
