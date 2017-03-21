@@ -4,11 +4,13 @@ import sbt._
 
 object Build {
 
-  type EncodedModuleID = (String, (String, String))
+  type EncodedArtifactID = (String, Boolean)
+  type EncodedModuleID = (String, (EncodedArtifactID, String))
 
   def buildInfoDecode(encodedId: EncodedModuleID): ModuleID = {
-    val (organization, (name, revision)) = encodedId
-    organization % name % revision
+    val (organization, (artifactId, revision)) = encodedId
+    val (name, isBinaryCrossVersion) = artifactId
+    if (isBinaryCrossVersion) organization %% name % revision else organization % name % revision
   }
 
 }

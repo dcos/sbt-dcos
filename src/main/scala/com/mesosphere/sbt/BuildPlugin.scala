@@ -79,7 +79,7 @@ object BuildPlugin extends AutoPlugin {
         reportTeamCityParameter("PROJECT_VERSION", version.value)
       }
     }
-  ) ++ Defaults.itSettings
+  ) ++ Defaults.itSettings ++ Scalastyle.settings
 
   /** These should be added to the subproject containing the main class. */
   def itSettings(mainClassName: String): Seq[Def.Setting[_]] = {

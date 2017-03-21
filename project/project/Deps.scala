@@ -14,14 +14,17 @@ object Deps {
 
   val libraries: Seq[ModuleID] = Seq(
     "org.apache.curator" % "curator-recipes" % curatorVersion,
-    "org.apache.curator" % "curator-test" % curatorVersion
+    "org.apache.curator" % "curator-test" % curatorVersion,
+    "org.scalastyle" %% "scalastyle" % "0.8.0"
   )
 
-  type EncodedModuleID = (String, (String, String))
+  type EncodedArtifactID = (String, Boolean)
+  type EncodedModuleID = (String, (EncodedArtifactID, String))
 
   def buildInfoEncode(id: ModuleID): EncodedModuleID = {
     // Need to use nested Tuple2s; sbt-buildinfo doesn't handle arbitrary TupleNs
-    (id.organization, (id.name, id.revision))
+    val artifactId = (id.name, id.crossVersion.toString == CrossVersion.binary.toString)
+    (id.organization, (artifactId, id.revision))
   }
 
 }
