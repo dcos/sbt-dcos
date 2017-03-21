@@ -19,8 +19,8 @@ final class CosmosIntegrationTestServer(
   oneJarPath: File
 ) {
   private val originalProperties: Properties = System.getProperties
-  private var process: Option[Process] = None
-  private var zkCluster: Option[TestingCluster] = None
+  private var process: Option[Process] = None           // scalastyle:ignore var.field
+  private var zkCluster: Option[TestingCluster] = None  // scalastyle:ignore var.field
 
   def setup(logger: Logger): Unit = {
     initZkCluster(logger)
@@ -31,12 +31,13 @@ final class CosmosIntegrationTestServer(
   def runProcess(logger: Logger, cmd: Seq[String]): Unit = {
     logger.info("Starting cosmos with command: " + cmd.mkString(" "))
 
+    val prefix = "<<cosmos-server>> "
     val run = Process(cmd).run(new ProcessLogger() {
       override def buffer[T](f: => T): T = logger.buffer(f)
 
-      override def error(s: => String): Unit = logger.info("<<cosmos-server>> " + s)
+      override def error(s: => String): Unit = logger.info(prefix + s)
 
-      override def info(s: => String): Unit = logger.info("<<cosmos-server>> " + s)
+      override def info(s: => String): Unit = logger.info(prefix + s)
     })
     val fExitValue = Future(run.exitValue())
     process = Some(run)
@@ -59,7 +60,7 @@ final class CosmosIntegrationTestServer(
       val connectString = c.getConnectString
       val zNodeNameSize = 10
       val baseZNode = Random.alphanumeric.take(zNodeNameSize).mkString
-      s"zk://$connectString/$baseZNode"
+      s"zk://$connectString/$baseZNode"  // scalastyle:ignore multiple.string.literals
     }.get
 
     val java = javaHome
@@ -71,10 +72,12 @@ final class CosmosIntegrationTestServer(
     val packagesUri = systemProperty("com.mesosphere.cosmos.packageStorageUri").get
     val stagedPackagesUri = systemProperty("com.mesosphere.cosmos.stagedPackageStorageUri").get
 
-    setClientProperty("CosmosClient", "uri", "http://localhost:7070")
-    setClientProperty("ZooKeeperClient", "uri", zkUri)
-    setClientProperty("PackageStorageClient", "packagesUri", packagesUri)
-    setClientProperty("PackageStorageClient", "stagedUri", stagedPackagesUri)
+    val uriKey = "uri"
+    val packageStorageClient = "PackageStorageClient"
+    setClientProperty("CosmosClient", uriKey, "http://localhost:7070")
+    setClientProperty("ZooKeeperClient", uriKey, zkUri)
+    setClientProperty(packageStorageClient, "packagesUri", packagesUri)
+    setClientProperty(packageStorageClient, "stagedUri", stagedPackagesUri)
 
     val pathSeparator = System.getProperty("path.separator")
     val classpath =
@@ -117,7 +120,7 @@ final class CosmosIntegrationTestServer(
 
   private[this] def setClientProperty(clientName: String, key: String, value: String): Unit = {
     val property = s"com.mesosphere.cosmos.test.CosmosIntegrationTestClient.$clientName.$key"
-    val _ = System.setProperty(property, value)
+    val ignored = System.setProperty(property, value)
   }
 
   private[this] def systemProperty(key: String): Option[String] = {
@@ -145,14 +148,21 @@ final class CosmosIntegrationTestServer(
    */
   private[this] def waitUntilTrue(timeout: Duration)(action: => Boolean): Unit = {
     val startTimeMillis = System.currentTimeMillis()
-    while (!action) {
-      val elapsedTimeMillis = System.currentTimeMillis() - startTimeMillis
-      if (elapsedTimeMillis.millis > timeout) {
-        throw new TimeoutException()
+
+    @annotation.tailrec
+    def loop(): Unit = {
+      if (!action) {
+        val elapsedTimeMillis = System.currentTimeMillis() - startTimeMillis
+        if (elapsedTimeMillis.millis > timeout) {
+          throw new TimeoutException()
+        }
+        val sleepTime = 1000L
+        Thread.sleep(sleepTime)
+        loop()
       }
-      val sleepTime = 1000L
-      Thread.sleep(sleepTime)
     }
+
+    loop()
   }
 
   /**
@@ -162,9 +172,9 @@ final class CosmosIntegrationTestServer(
   private[this] def initCuratorTestJavassist(): Unit = {
     val origStdOut = System.out
     val origStdErr = System.err
-    //noinspection ConvertExpressionToSAM
+    // noinspection ConvertExpressionToSAM
     val devNull = new PrintStream(new OutputStream {
-      override def write(b: Int): Unit = { /*do Nothing*/ }
+      override def write(b: Int): Unit = { /* do Nothing */ }
     })
     System.setOut(devNull)
     System.setErr(devNull)

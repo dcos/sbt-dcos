@@ -30,7 +30,8 @@ object Scalastyle {
   private val genericSettings: Seq[Def.Setting[_]] = Seq(
     scalastyle := {
       val configFileName = "scalastyle-config.xml"
-      val configInputStream = Option(getClass.getResourceAsStream(s"/$configFileName"))
+      val resourceName = s"/$configFileName"  // scalastyle:ignore multiple.string.literals
+      val configInputStream = Option(getClass.getResourceAsStream(resourceName))
       val configString = configInputStream match {
         case Some(is) => IO.readStream(is, StandardCharsets.UTF_8)
         case _ => sys.error(s"Scalastyle config file is not on the classpath: $configFileName")
@@ -63,8 +64,8 @@ object Scalastyle {
 
   val settings: Seq[Def.Setting[_]] = Seq(
     scalastyle in (This, Global, This) := {
-      val _ = (scalastyle in Compile).value
-      val __ = (scalastyle in Test).value
+      val ignore1 = (scalastyle in Compile).value
+      val ignore2 = (scalastyle in Test).value
       (scalastyle in IntegrationTest).value
     }
   ) ++ Seq(Compile, Test, IntegrationTest).flatMap(inConfig(_)(genericSettings))
