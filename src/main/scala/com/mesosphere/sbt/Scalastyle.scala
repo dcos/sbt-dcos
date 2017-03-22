@@ -25,16 +25,27 @@ import sbt.Keys._
 
 object Scalastyle {
 
-  private val scalastyle: TaskKey[Unit] = taskKey("Check sources with Scalastyle")
+  val scalastyle: TaskKey[Unit] = taskKey("Check sources with Scalastyle")
+
+  val scalastyleConfig: SettingKey[Option[File]] =
+    settingKey(
+      "The location of the Scalastyle configuration file. Set to None to use the default config."
+    )
 
   private val genericSettings: Seq[Def.Setting[_]] = Seq(
     scalastyle := {
-      val configFileName = "scalastyle-config.xml"
-      val resourceName = s"/$configFileName"  // scalastyle:ignore multiple.string.literals
-      val configInputStream = Option(getClass.getResourceAsStream(resourceName))
-      val configString = configInputStream match {
-        case Some(is) => IO.readStream(is, StandardCharsets.UTF_8)
-        case _ => sys.error(s"Scalastyle config file is not on the classpath: $configFileName")
+      val configString = scalastyleConfig.value match {
+        case Some(configFile) =>
+          IO.read(configFile, StandardCharsets.UTF_8)
+        case _ =>
+          val configFileName = "scalastyle-config.xml"
+          val resourceName = s"/$configFileName"  // scalastyle:ignore multiple.string.literals
+          val configInputStream = Option(getClass.getResourceAsStream(resourceName))
+
+          configInputStream match {
+            case Some(is) => IO.readStream(is, StandardCharsets.UTF_8)
+            case _ => sys.error(s"Scalastyle config file is not on the classpath: $configFileName")
+          }
       }
 
       val checker = new ScalastyleChecker[FileSpec]()
@@ -67,7 +78,8 @@ object Scalastyle {
       val ignore1 = (scalastyle in Compile).value
       val ignore2 = (scalastyle in Test).value
       (scalastyle in IntegrationTest).value
-    }
+    },
+    scalastyleConfig in Global := None
   ) ++ Seq(Compile, Test, IntegrationTest).flatMap(inConfig(_)(genericSettings))
 
 }
