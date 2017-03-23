@@ -11,7 +11,7 @@ lazy val root = project.in(file("."))
 
     // Reuse the data from the metabuild
     libraryDependencies ++= metabuild.BuildInfo.libraries.map(Build.buildInfoDecode),
-    metabuild.BuildInfo.plugins.map(Build.buildInfoDecode _ andThen addSbtPlugin _),
+    metabuild.BuildInfo.plugins.map(moduleId => addSbtPlugin(Build.buildInfoDecode(moduleId))),
 
     BuildPlugin.publishSettings,
     pomExtra :=
