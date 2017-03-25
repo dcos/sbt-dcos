@@ -1,14 +1,14 @@
-import com.mesosphere.sbt.TransitivePlugins
+import com.mesosphere.sbt.Deps
 
 lazy val metaroot = (project in file("."))
   .enablePlugins(BuildInfoPlugin)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](
-      // Encode the plugin module ID in BuildInfo to avoid duplication
-      "pluginModuleInfo" -> TransitivePlugins.moduleIds.map { id =>
-        // Need to use nested Tuple2s; sbt-buildinfo doesn't handle arbitrary TupleNs
-        (id.organization, (id.name, id.revision))
-      }
+      // Encode the plugin and library module IDs in BuildInfo to avoid duplication
+      "plugins" -> Deps.plugins.map(Deps.buildInfoEncode),
+      "libraries" -> Deps.libraries.map(Deps.buildInfoEncode)
     ),
-    buildInfoPackage := "metabuild"
+    buildInfoPackage := "metabuild",
+
+    libraryDependencies ++= Deps.libraries
   )
