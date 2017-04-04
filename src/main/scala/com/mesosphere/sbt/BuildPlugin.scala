@@ -84,11 +84,12 @@ object BuildPlugin extends AutoPlugin {
       // scalastyle:on line.size.limit
 
       commonOptions ++ (if (parsedScalaVersion.value < twoEleven) Seq.empty else twoElevenOptions)
-    },
-
-    scalacOptions in (Compile, doc) += "-no-link-warnings"
-  ) ++ Seq(Compile, Test, IntegrationTest).map {
-    config => scalacOptions in (config, console) ~= (_.filterNot(_ == warnUnusedImport))
+    }
+  ) ++ Seq(Compile, Test, IntegrationTest).flatMap { config =>
+    Seq(
+      scalacOptions in (config, console) ~= (_.filterNot(_ == warnUnusedImport)),
+      scalacOptions in (config, doc) += "-no-link-warnings"
+    )
   }
 
   /** These should be added to the subproject containing the main class. */
