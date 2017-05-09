@@ -92,22 +92,25 @@ object BuildPlugin extends AutoPlugin {
     )
   }
 
-  /** These should be added to the subproject containing the main class. */
-  def itSettings(mainClassName: String): Seq[Def.Setting[_]] = {
-    oneJarSettings ++ Seq(
-      mainClass in oneJar := Some(mainClassName),
-      testOptions in IntegrationTest ++= {
-        lazy val itServer = new CosmosIntegrationTestServer(
-          (javaHome in run).value.map(_.getCanonicalPath),
-          (resourceDirectories in IntegrationTest).value,
-          oneJar.value
-        )
+  /** This should be added to the subproject containing the main class. */
+  def allOneJarSettings(mainClassName: String): Seq[Def.Setting[_]] = {
+    oneJarSettings :+ (mainClass in oneJar := Some(mainClassName))
+  }
 
-        Seq(
-          Tests.Setup(() => itServer.setup((streams in runMain).value.log)),
-          Tests.Cleanup(() => itServer.cleanup())
-        )
-      }
+  /** This should be appended to (testOptions in IntegrationTest) */
+  def itTestOptions(
+    javaHomeValue: Option[File],
+    classpathPrefix: Seq[File],
+    oneJarValue: File,
+    streamsValue: Keys.TaskStreams
+  ): Seq[TestOption] = {
+    val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
+    lazy val itServer =
+      new CosmosIntegrationTestServer(canonicalJavaHome, classpathPrefix, oneJarValue)
+
+    Seq(
+      Tests.Setup(() => itServer.setup(streamsValue.log)),
+      Tests.Cleanup(() => itServer.cleanup())
     )
   }
 

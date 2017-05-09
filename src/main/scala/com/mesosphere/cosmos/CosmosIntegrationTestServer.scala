@@ -15,7 +15,7 @@ import scala.util.Random
 
 final class CosmosIntegrationTestServer(
   javaHome: Option[String],
-  itResourceDirs: Seq[File],
+  classpathPrefix: Seq[File],
   oneJarPath: File
 ) {
   private val originalProperties: Properties = System.getProperties
@@ -81,7 +81,7 @@ final class CosmosIntegrationTestServer(
 
     val pathSeparator = System.getProperty("path.separator")
     val classpath =
-      s"${itResourceDirs.map(_.getCanonicalPath).mkString("", pathSeparator, pathSeparator)}" +
+      s"${classpathPrefix.map(_.getCanonicalPath).mkString("", pathSeparator, pathSeparator)}" +
         s"${oneJarPath.getCanonicalPath}"
 
     Seq(
