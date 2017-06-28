@@ -4,7 +4,7 @@ import com.mesosphere.sbt.BuildPlugin
 lazy val root = project.in(file("."))
   .settings(
     name := "sbt-dcos",
-    version := "0.1.0-SNAPSHOT",
+    version := "0.1.0",
     organization := "com.mesosphere",
     scalaVersion := "2.10.6",
     sbtPlugin := true,
