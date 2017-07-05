@@ -2,6 +2,7 @@ package com.mesosphere.sbt
 
 import com.github.retronym.SbtOneJar._
 import com.mesosphere.cosmos.CosmosIntegrationTestServer
+import com.mesosphere.cosmos.TestProperty
 import sbt._
 import sbt.Keys._
 import scala.Ordering.Implicits._
@@ -102,11 +103,16 @@ object BuildPlugin extends AutoPlugin {
     javaHomeValue: Option[File],
     classpathPrefix: Seq[File],
     oneJarValue: File,
+    additionalProperties: List[TestProperty],
     streamsValue: Keys.TaskStreams
   ): Seq[TestOption] = {
     val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
-    lazy val itServer =
-      new CosmosIntegrationTestServer(canonicalJavaHome, classpathPrefix, oneJarValue)
+    lazy val itServer = new CosmosIntegrationTestServer(
+      canonicalJavaHome,
+      classpathPrefix,
+      oneJarValue,
+      additionalProperties
+    )
 
     Seq(
       Tests.Setup(() => itServer.setup(streamsValue.log)),

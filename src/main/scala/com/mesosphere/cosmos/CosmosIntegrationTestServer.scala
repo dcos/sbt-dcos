@@ -16,7 +16,8 @@ import scala.util.Random
 final class CosmosIntegrationTestServer(
   javaHome: Option[String],
   classpathPrefix: Seq[File],
-  oneJarPath: File
+  oneJarPath: File,
+  additionalProperties: List[TestProperty]
 ) {
   private val originalProperties: Properties = System.getProperties
   private var process: Option[Process] = None           // scalastyle:ignore var.field
@@ -69,15 +70,17 @@ final class CosmosIntegrationTestServer(
       .getOrElse("java")
 
     val dcosUri = systemProperty("com.mesosphere.cosmos.dcosUri").get
-    val packagesUri = systemProperty("com.mesosphere.cosmos.packageStorageUri").get
-    val stagedPackagesUri = systemProperty("com.mesosphere.cosmos.stagedPackageStorageUri").get
+    val propertiesMap = additionalProperties.map { testProperty =>
+      testProperty -> systemProperty(testProperty.propertyName).get
+    }
 
     val uriKey = "uri"
-    val packageStorageClient = "PackageStorageClient"
     setClientProperty("CosmosClient", uriKey, "http://localhost:7070")
     setClientProperty("ZooKeeperClient", uriKey, zkUri)
-    setClientProperty(packageStorageClient, "packagesUri", packagesUri)
-    setClientProperty(packageStorageClient, "stagedUri", stagedPackagesUri)
+
+    propertiesMap.foreach { case (testProperty, value) =>
+      setClientProperty(testProperty.clientName, testProperty.name, value)
+    }
 
     val pathSeparator = System.getProperty("path.separator")
     val classpath =
@@ -91,10 +94,8 @@ final class CosmosIntegrationTestServer(
       classpath,
       "com.simontuffs.onejar.Boot",
       s"-com.mesosphere.cosmos.zookeeperUri=$zkUri",
-      s"-com.mesosphere.cosmos.dcosUri=$dcosUri",
-      s"-com.mesosphere.cosmos.packageStorageUri=$packagesUri",
-      s"-com.mesosphere.cosmos.stagedPackageStorageUri=$stagedPackagesUri"
-    )
+      s"-com.mesosphere.cosmos.dcosUri=$dcosUri"
+    ) ++ propertiesMap.map { case (testProperty, value) => s"-${testProperty.propertyName}=$value" }
   }
 
   def initZkCluster(logger: Logger): Unit = {
