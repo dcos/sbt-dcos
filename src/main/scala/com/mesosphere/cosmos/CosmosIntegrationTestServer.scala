@@ -79,7 +79,7 @@ final class CosmosIntegrationTestServer(
     setClientProperty("ZooKeeperClient", uriKey, zkUri)
 
     propertiesMap.foreach { case (testProperty, value) =>
-      setClientProperty(testProperty.clientName, testProperty.clientKey, value)
+      setClientProperty(testProperty.clientName, testProperty.name, value)
     }
 
     val pathSeparator = System.getProperty("path.separator")
