@@ -76,7 +76,6 @@ final class CosmosIntegrationTestServer(
 
     val uriKey = "uri"
     setClientProperty("CosmosClient", uriKey, "http://localhost:7070")
-    setClientProperty("ZooKeeperClient", uriKey, zkUri)
 
     propertiesMap.foreach { case (testProperty, value) =>
       setClientProperty(testProperty.clientName, testProperty.name, value)
