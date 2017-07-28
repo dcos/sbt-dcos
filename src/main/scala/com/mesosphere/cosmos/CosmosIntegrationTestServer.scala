@@ -74,13 +74,6 @@ final class CosmosIntegrationTestServer(
       testProperty -> systemProperty(testProperty.propertyName).get
     }
 
-    val uriKey = "uri"
-    setClientProperty("CosmosClient", uriKey, "http://localhost:7070")
-
-    propertiesMap.foreach { case (testProperty, value) =>
-      setClientProperty(testProperty.clientName, testProperty.name, value)
-    }
-
     val pathSeparator = System.getProperty("path.separator")
     val classpath =
       s"${classpathPrefix.map(_.getCanonicalPath).mkString("", pathSeparator, pathSeparator)}" +
@@ -116,11 +109,6 @@ final class CosmosIntegrationTestServer(
     System.setProperties(originalProperties)
     process.foreach(_.destroy())
     zkCluster.foreach(_.close())
-  }
-
-  private[this] def setClientProperty(clientName: String, key: String, value: String): Unit = {
-    val property = s"com.mesosphere.cosmos.test.CosmosIntegrationTestClient.$clientName.$key"
-    val ignored = System.setProperty(property, value)
   }
 
   private[this] def systemProperty(key: String): Option[String] = {

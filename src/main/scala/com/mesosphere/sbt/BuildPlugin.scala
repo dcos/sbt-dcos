@@ -106,18 +106,25 @@ object BuildPlugin extends AutoPlugin {
     additionalProperties: List[TestProperty],
     streamsValue: Keys.TaskStreams
   ): Seq[TestOption] = {
-    val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
-    lazy val itServer = new CosmosIntegrationTestServer(
-      canonicalJavaHome,
-      classpathPrefix,
-      oneJarValue,
-      additionalProperties
-    )
+    clientCosmosProperty match {
+      case None =>
+        exportClientCosmosProperty("http://localhost:7070")
 
-    Seq(
-      Tests.Setup(() => itServer.setup(streamsValue.log)),
-      Tests.Cleanup(() => itServer.cleanup())
-    )
+        val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
+        lazy val itServer = new CosmosIntegrationTestServer(
+          canonicalJavaHome,
+          classpathPrefix,
+          oneJarValue,
+          additionalProperties
+        )
+
+        Seq(
+          Tests.Setup(() => itServer.setup(streamsValue.log)),
+          Tests.Cleanup(() => itServer.cleanup())
+        )
+      case Some(_) =>
+        Seq.empty
+    }
   }
 
   lazy val publishSettings: Seq[Def.Setting[_]] = Seq(
@@ -142,4 +149,14 @@ object BuildPlugin extends AutoPlugin {
     // scalastyle:on regex multiple.string.literals
   }
 
+  private[this] val CosmosClientPropertyName =
+    "com.mesosphere.cosmos.test.CosmosIntegrationTestClient.CosmosClient.uri"
+
+  private def exportClientCosmosProperty(value: String): Unit = {
+    val ignored = System.setProperty(CosmosClientPropertyName, value)
+  }
+
+  private def clientCosmosProperty: Option[String] = {
+    Option(System.getProperty(CosmosClientPropertyName))
+  }
 }
