@@ -1,10 +1,13 @@
 package com.mesosphere.sbt
 
 import com.github.retronym.SbtOneJar._
+import com.mesosphere.bootCosmos
 import com.mesosphere.cosmos.CosmosIntegrationTestServer
 import com.mesosphere.cosmos.TestProperty
-import sbt._
+import com.mesosphere.loadDcosUriSystemProperty
+import com.mesosphere.saveSystemProperty
 import sbt.Keys._
+import sbt._
 import scala.Ordering.Implicits._
 import scoverage.ScoverageKeys._
 
@@ -106,24 +109,24 @@ object BuildPlugin extends AutoPlugin {
     additionalProperties: List[TestProperty],
     streamsValue: Keys.TaskStreams
   ): Seq[TestOption] = {
-    clientCosmosProperty match {
-      case None =>
-        exportClientCosmosProperty("http://localhost:7070")
+    if (bootCosmos()) {
+      saveClientCosmosProperty("http://localhost:7070")
 
-        val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
-        lazy val itServer = new CosmosIntegrationTestServer(
-          canonicalJavaHome,
-          classpathPrefix,
-          oneJarValue,
-          additionalProperties
-        )
+      val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
+      lazy val itServer = new CosmosIntegrationTestServer(
+        canonicalJavaHome,
+        classpathPrefix,
+        oneJarValue,
+        additionalProperties
+      )
 
-        Seq(
-          Tests.Setup(() => itServer.setup(streamsValue.log)),
-          Tests.Cleanup(() => itServer.cleanup())
-        )
-      case Some(_) =>
-        Seq.empty
+      Seq(
+        Tests.Setup(() => itServer.setup(streamsValue.log)),
+        Tests.Cleanup(() => itServer.cleanup())
+      )
+    } else {
+      saveClientCosmosProperty(loadDcosUriSystemProperty())
+      Seq.empty
     }
   }
 
@@ -152,11 +155,7 @@ object BuildPlugin extends AutoPlugin {
   private[this] val CosmosClientPropertyName =
     "com.mesosphere.cosmos.test.CosmosIntegrationTestClient.CosmosClient.uri"
 
-  private def exportClientCosmosProperty(value: String): Unit = {
-    val ignored = System.setProperty(CosmosClientPropertyName, value)
-  }
-
-  private def clientCosmosProperty: Option[String] = {
-    Option(System.getProperty(CosmosClientPropertyName))
+  private def saveClientCosmosProperty(value: String): Unit = {
+    val ignored = saveSystemProperty(CosmosClientPropertyName, value)
   }
 }

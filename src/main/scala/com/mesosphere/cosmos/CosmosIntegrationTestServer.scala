@@ -1,5 +1,7 @@
 package com.mesosphere.cosmos
 
+import com.mesosphere.loadSystemProperty
+import com.mesosphere.loadDcosUriSystemProperty
 import java.io.OutputStream
 import java.io.PrintStream
 import java.net.URL
@@ -66,12 +68,12 @@ final class CosmosIntegrationTestServer(
 
     val java = javaHome
       .map(_ + "/bin/java")
-      .orElse(systemProperty("java.home").map(jre => s"$jre/bin/java"))
+      .orElse(loadSystemProperty("java.home").map(jre => s"$jre/bin/java"))
       .getOrElse("java")
 
-    val dcosUri = systemProperty("com.mesosphere.cosmos.dcosUri").get
+    val dcosUri = loadDcosUriSystemProperty()
     val propertiesMap = additionalProperties.map { testProperty =>
-      testProperty -> systemProperty(testProperty.propertyName).get
+      testProperty -> loadSystemProperty(testProperty.propertyName).get
     }
 
     val pathSeparator = System.getProperty("path.separator")
@@ -109,10 +111,6 @@ final class CosmosIntegrationTestServer(
     System.setProperties(originalProperties)
     process.foreach(_.destroy())
     zkCluster.foreach(_.close())
-  }
-
-  private[this] def systemProperty(key: String): Option[String] = {
-    Option(System.getProperty(key))
   }
 
   /**
