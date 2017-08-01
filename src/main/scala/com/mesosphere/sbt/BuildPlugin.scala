@@ -1,10 +1,10 @@
 package com.mesosphere.sbt
 
 import com.github.retronym.SbtOneJar._
-import com.mesosphere.bootCosmos
 import com.mesosphere.cosmos.CosmosIntegrationTestServer
 import com.mesosphere.cosmos.TestProperty
 import com.mesosphere.loadDcosUriSystemProperty
+import com.mesosphere.loadSystemProperty
 import com.mesosphere.saveSystemProperty
 import sbt.Keys._
 import sbt._
@@ -110,7 +110,9 @@ object BuildPlugin extends AutoPlugin {
     streamsValue: Keys.TaskStreams
   ): Seq[TestOption] = {
     if (bootCosmos()) {
+      // Run the integration tests against a new created Cosmos configured to talk to DC/OS.
       saveClientCosmosProperty("http://localhost:7070")
+      saveDirectCosmosProperty(true)
 
       val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
       lazy val itServer = new CosmosIntegrationTestServer(
@@ -125,8 +127,19 @@ object BuildPlugin extends AutoPlugin {
         Tests.Cleanup(() => itServer.cleanup())
       )
     } else {
-      saveClientCosmosProperty(loadDcosUriSystemProperty())
-      Seq.empty
+      loadDcosUriSystemProperty() match {
+        case Some(dcosUri) =>
+          // Run the integration tests against a DC/OS cluster
+          saveClientCosmosProperty(dcosUri)
+          saveDirectCosmosProperty(false)
+          Seq.empty
+        case None =>
+          /* Run the integration tests against a user controlled Cosmos; assume ClientCosmos property
+           * is set.
+           */
+          saveDirectCosmosProperty(true)
+          Seq.empty
+      }
     }
   }
 
@@ -152,10 +165,23 @@ object BuildPlugin extends AutoPlugin {
     // scalastyle:on regex multiple.string.literals
   }
 
-  private[this] val CosmosClientPropertyName =
+  private[this] val CosmosClientPropertyName = {
     "com.mesosphere.cosmos.test.CosmosIntegrationTestClient.CosmosClient.uri"
+  }
+
+  private[this] val DirectConnectionPropertyName = {
+    "com.mesosphere.cosmos.test.CosmosIntegrationTestClient.CosmosClient.direct"
+  }
 
   private def saveClientCosmosProperty(value: String): Unit = {
     val ignored = saveSystemProperty(CosmosClientPropertyName, value)
+  }
+
+  private def  saveDirectCosmosProperty(value: Boolean): Unit = {
+    val ignored = saveSystemProperty(DirectConnectionPropertyName, value.toString)
+  }
+
+  private def bootCosmos(): Boolean = {
+    loadSystemProperty("com.mesosphere.cosmos.boot").map(_.toBoolean).getOrElse(false)
   }
 }

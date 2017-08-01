@@ -9,11 +9,7 @@ package object mesosphere {
     val ignored = System.setProperty(key, value)
   }
 
-  def loadDcosUriSystemProperty(): String = {
-    loadSystemProperty("com.mesosphere.cosmos.dcosUri").get
-  }
-
-  def bootCosmos(): Boolean = {
-    loadSystemProperty("com.mesosphere.cosmos.boot").map(_.toBoolean).getOrElse(false)
+  def loadDcosUriSystemProperty(): Option[String] = {
+    loadSystemProperty("com.mesosphere.cosmos.dcosUri")
   }
 }
