@@ -71,7 +71,7 @@ final class CosmosIntegrationTestServer(
       .orElse(loadSystemProperty("java.home").map(jre => s"$jre/bin/java"))
       .getOrElse("java")
 
-    val dcosUri = loadDcosUriSystemProperty().get
+    val dcosUri = loadDcosUriSystemProperty()
     val propertiesMap = additionalProperties.map { testProperty =>
       testProperty -> loadSystemProperty(testProperty.propertyName).get
     }

@@ -126,20 +126,15 @@ object BuildPlugin extends AutoPlugin {
         Tests.Setup(() => itServer.setup(streamsValue.log)),
         Tests.Cleanup(() => itServer.cleanup())
       )
+    } else if (loadClientCosmosProperty().isDefined) {
+      // Run the integration tests against a DC/OS cluster
+      saveClientCosmosProperty(loadDcosUriSystemProperty())
+      saveDirectCosmosProperty(false)
+      Seq.empty
     } else {
-      loadDcosUriSystemProperty() match {
-        case Some(dcosUri) =>
-          // Run the integration tests against a DC/OS cluster
-          saveClientCosmosProperty(dcosUri)
-          saveDirectCosmosProperty(false)
-          Seq.empty
-        case None =>
-          /* Run the integration tests against a user controlled Cosmos; assume ClientCosmos property
-           * is set.
-           */
-          saveDirectCosmosProperty(true)
-          Seq.empty
-      }
+      // Run the integration tests against a user controlled Cosmos
+      saveDirectCosmosProperty(true)
+      Seq.empty
     }
   }
 
@@ -177,11 +172,15 @@ object BuildPlugin extends AutoPlugin {
     val ignored = saveSystemProperty(CosmosClientPropertyName, value)
   }
 
+  private def loadClientCosmosProperty(): Option[String] = {
+    loadSystemProperty(CosmosClientPropertyName)
+  }
+
   private def  saveDirectCosmosProperty(value: Boolean): Unit = {
     val ignored = saveSystemProperty(DirectConnectionPropertyName, value.toString)
   }
 
   private def bootCosmos(): Boolean = {
-    loadSystemProperty("com.mesosphere.cosmos.boot").map(_.toBoolean).getOrElse(false)
+    loadSystemProperty("com.mesosphere.cosmos.boot").map(_.toBoolean).getOrElse(true)
   }
 }
