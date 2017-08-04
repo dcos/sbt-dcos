@@ -127,13 +127,13 @@ object BuildPlugin extends AutoPlugin {
         Tests.Cleanup(() => itServer.cleanup())
       )
     } else if (loadClientCosmosProperty().isDefined) {
+      // Run the integration tests against a user controlled Cosmos
+      saveDirectCosmosProperty(true)
+      Seq.empty
+    } else {
       // Run the integration tests against a DC/OS cluster
       saveClientCosmosProperty(loadDcosUriSystemProperty())
       saveDirectCosmosProperty(false)
-      Seq.empty
-    } else {
-      // Run the integration tests against a user controlled Cosmos
-      saveDirectCosmosProperty(true)
       Seq.empty
     }
   }
