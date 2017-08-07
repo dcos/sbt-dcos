@@ -16,6 +16,9 @@ object BuildPlugin extends AutoPlugin {
   private val firstScalaVersionSupportingJvm18: List[Int] = parseScalaVersion("2.11.5")
 
   private val fatalWarnings: String = "-Xfatal-warnings"
+  private val lint: String = "-Xlint"
+  private val warnUnused: String = "-Ywarn-unused"
+  private val warnUnusedImport: String = "-Ywarn-unused-import"
 
   private val parsedScalaVersion: SettingKey[List[Int]] =
     settingKey("The project's Scala version, parsed into a list of version numbers")
@@ -67,7 +70,7 @@ object BuildPlugin extends AutoPlugin {
         "-unchecked",              // Enable additional warnings where generated code depends on assumptions.
         fatalWarnings,             // Fail the compilation if there are any warnings.
         "-Xfuture",                // Turn on future language features.
-        "-Xlint",                  // Enable or disable specific warnings
+        lint,                      // Enable or disable specific warnings
         "-Ywarn-adapted-args",     // Warn if an argument list is modified to match the receiver.
         "-Ywarn-dead-code",        // Warn when dead code is identified.
         "-Ywarn-inaccessible",     // Warn about inaccessible types in method signatures.
@@ -79,16 +82,17 @@ object BuildPlugin extends AutoPlugin {
 
       val twoElevenOptions = Seq(
         "-Ywarn-infer-any",        // Warn when a type argument is inferred to be `Any`.
-        "-Ywarn-unused",           // Warn when local and private vals, vars, defs, and types are unused.
-        "-Ywarn-unused-import"     // Warn when imports are unused.
+        warnUnused,                // Warn when local and private vals, vars, defs, and types are unused.
+        warnUnusedImport           // Warn when imports are unused.
       )
       // scalastyle:on line.size.limit
 
       commonOptions ++ (if (parsedScalaVersion.value < twoEleven) Seq.empty else twoElevenOptions)
     }
   ) ++ Seq(Compile, Test, IntegrationTest).flatMap { config =>
+    val consoleOptionsBlacklist = Set(fatalWarnings, lint, warnUnused, warnUnusedImport)
     Seq(
-      scalacOptions in (config, console) ~= (_.filterNot(_ == fatalWarnings)),
+      scalacOptions in (config, console) ~= (_.filterNot(consoleOptionsBlacklist)),
       scalacOptions in (config, doc) += "-no-link-warnings"
     )
   }
