@@ -15,7 +15,7 @@ object BuildPlugin extends AutoPlugin {
   private val twoEleven: List[Int] = parseScalaVersion("2.11")
   private val firstScalaVersionSupportingJvm18: List[Int] = parseScalaVersion("2.11.5")
 
-  private val warnUnusedImport: String = "-Ywarn-unused-import"
+  private val fatalWarnings: String = "-Xfatal-warnings"
 
   private val parsedScalaVersion: SettingKey[List[Int]] =
     settingKey("The project's Scala version, parsed into a list of version numbers")
@@ -65,7 +65,7 @@ object BuildPlugin extends AutoPlugin {
         "-feature",                // Emit warning for usages of features that should be imported explicitly.
         targetJvm,                 // Target platform for object files.
         "-unchecked",              // Enable additional warnings where generated code depends on assumptions.
-        "-Xfatal-warnings",        // Fail the compilation if there are any warnings.
+        fatalWarnings,             // Fail the compilation if there are any warnings.
         "-Xfuture",                // Turn on future language features.
         "-Xlint",                  // Enable or disable specific warnings
         "-Ywarn-adapted-args",     // Warn if an argument list is modified to match the receiver.
@@ -80,7 +80,7 @@ object BuildPlugin extends AutoPlugin {
       val twoElevenOptions = Seq(
         "-Ywarn-infer-any",        // Warn when a type argument is inferred to be `Any`.
         "-Ywarn-unused",           // Warn when local and private vals, vars, defs, and types are unused.
-        warnUnusedImport           // Warn when imports are unused.
+        "-Ywarn-unused-import"     // Warn when imports are unused.
       )
       // scalastyle:on line.size.limit
 
@@ -88,7 +88,7 @@ object BuildPlugin extends AutoPlugin {
     }
   ) ++ Seq(Compile, Test, IntegrationTest).flatMap { config =>
     Seq(
-      scalacOptions in (config, console) ~= (_.filterNot(_ == warnUnusedImport)),
+      scalacOptions in (config, console) ~= (_.filterNot(_ == fatalWarnings)),
       scalacOptions in (config, doc) += "-no-link-warnings"
     )
   }
