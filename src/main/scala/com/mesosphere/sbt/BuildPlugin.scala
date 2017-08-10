@@ -6,8 +6,8 @@ import com.mesosphere.cosmos.TestProperty
 import com.mesosphere.loadDcosUriSystemProperty
 import com.mesosphere.loadSystemProperty
 import com.mesosphere.saveSystemProperty
-import sbt.Keys._
 import sbt._
+import sbt.Keys._
 import scala.Ordering.Implicits._
 import scoverage.ScoverageKeys._
 

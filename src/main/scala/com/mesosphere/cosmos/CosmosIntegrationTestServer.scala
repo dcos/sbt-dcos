@@ -1,7 +1,7 @@
 package com.mesosphere.cosmos
 
-import com.mesosphere.loadSystemProperty
 import com.mesosphere.loadDcosUriSystemProperty
+import com.mesosphere.loadSystemProperty
 import java.io.OutputStream
 import java.io.PrintStream
 import java.net.URL
