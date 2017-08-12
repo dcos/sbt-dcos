@@ -1,5 +1,7 @@
 package com.mesosphere.cosmos
 
+import com.mesosphere.loadDcosUriSystemProperty
+import com.mesosphere.loadSystemProperty
 import java.io.OutputStream
 import java.io.PrintStream
 import java.net.URL
@@ -15,9 +17,8 @@ import scala.util.Random
 
 final class CosmosIntegrationTestServer(
   javaHome: Option[String],
-  classpathPrefix: Seq[File],
   oneJarPath: File,
-  additionalProperties: List[TestProperty]
+  additionalProperties: List[String]
 ) {
   private val originalProperties: Properties = System.getProperties
   private var process: Option[Process] = None           // scalastyle:ignore var.field
@@ -66,25 +67,17 @@ final class CosmosIntegrationTestServer(
 
     val java = javaHome
       .map(_ + "/bin/java")
-      .orElse(systemProperty("java.home").map(jre => s"$jre/bin/java"))
+      .orElse(loadSystemProperty("java.home").map(jre => s"$jre/bin/java"))
       .getOrElse("java")
 
-    val dcosUri = systemProperty("com.mesosphere.cosmos.dcosUri").get
-    val propertiesMap = additionalProperties.map { testProperty =>
-      testProperty -> systemProperty(testProperty.propertyName).get
-    }
-
-    val uriKey = "uri"
-    setClientProperty("CosmosClient", uriKey, "http://localhost:7070")
-
-    propertiesMap.foreach { case (testProperty, value) =>
-      setClientProperty(testProperty.clientName, testProperty.name, value)
+    val dcosUri = loadDcosUriSystemProperty()
+    val propertiesMap = additionalProperties.map { name =>
+      val fullName = s"com.mesosphere.cosmos.$name"
+      fullName -> loadSystemProperty(fullName).get
     }
 
     val pathSeparator = System.getProperty("path.separator")
-    val classpath =
-      s"${classpathPrefix.map(_.getCanonicalPath).mkString("", pathSeparator, pathSeparator)}" +
-        s"${oneJarPath.getCanonicalPath}"
+    val classpath = s"${oneJarPath.getCanonicalPath}"
 
     Seq(
       java,
@@ -94,7 +87,7 @@ final class CosmosIntegrationTestServer(
       "com.simontuffs.onejar.Boot",
       s"-com.mesosphere.cosmos.zookeeperUri=$zkUri",
       s"-com.mesosphere.cosmos.dcosUri=$dcosUri"
-    ) ++ propertiesMap.map { case (testProperty, value) => s"-${testProperty.propertyName}=$value" }
+    ) ++ propertiesMap.map { case (name, value) => s"-$name=$value" }
   }
 
   def initZkCluster(logger: Logger): Unit = {
@@ -116,15 +109,6 @@ final class CosmosIntegrationTestServer(
     System.setProperties(originalProperties)
     process.foreach(_.destroy())
     zkCluster.foreach(_.close())
-  }
-
-  private[this] def setClientProperty(clientName: String, key: String, value: String): Unit = {
-    val property = s"com.mesosphere.cosmos.test.CosmosIntegrationTestClient.$clientName.$key"
-    val ignored = System.setProperty(property, value)
-  }
-
-  private[this] def systemProperty(key: String): Option[String] = {
-    Option(System.getProperty(key))
   }
 
   /**

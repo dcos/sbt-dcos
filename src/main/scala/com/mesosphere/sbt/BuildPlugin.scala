@@ -2,7 +2,9 @@ package com.mesosphere.sbt
 
 import com.github.retronym.SbtOneJar._
 import com.mesosphere.cosmos.CosmosIntegrationTestServer
-import com.mesosphere.cosmos.TestProperty
+import com.mesosphere.loadDcosUriSystemProperty
+import com.mesosphere.loadSystemProperty
+import com.mesosphere.saveSystemProperty
 import sbt._
 import sbt.Keys._
 import scala.Ordering.Implicits._
@@ -105,23 +107,36 @@ object BuildPlugin extends AutoPlugin {
   /** This should be appended to (testOptions in IntegrationTest) */
   def itTestOptions(
     javaHomeValue: Option[File],
-    classpathPrefix: Seq[File],
     oneJarValue: File,
-    additionalProperties: List[TestProperty],
+    additionalProperties: List[String],
     streamsValue: Keys.TaskStreams
   ): Seq[TestOption] = {
-    val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
-    lazy val itServer = new CosmosIntegrationTestServer(
-      canonicalJavaHome,
-      classpathPrefix,
-      oneJarValue,
-      additionalProperties
-    )
+    if (bootCosmos()) {
+      // Run the integration tests against a new created Cosmos configured to talk to DC/OS.
+      saveClientCosmosProperty("http://localhost:7070")
+      saveDirectCosmosProperty(true)
 
-    Seq(
-      Tests.Setup(() => itServer.setup(streamsValue.log)),
-      Tests.Cleanup(() => itServer.cleanup())
-    )
+      val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
+      lazy val itServer = new CosmosIntegrationTestServer(
+        canonicalJavaHome,
+        oneJarValue,
+        additionalProperties
+      )
+
+      Seq(
+        Tests.Setup(() => itServer.setup(streamsValue.log)),
+        Tests.Cleanup(() => itServer.cleanup())
+      )
+    } else if (loadClientCosmosProperty().isDefined) {
+      // Run the integration tests against a user controlled Cosmos
+      saveDirectCosmosProperty(true)
+      Seq.empty
+    } else {
+      // Run the integration tests against a DC/OS cluster
+      saveClientCosmosProperty(loadDcosUriSystemProperty())
+      saveDirectCosmosProperty(false)
+      Seq.empty
+    }
   }
 
   lazy val publishSettings: Seq[Def.Setting[_]] = Seq(
@@ -146,4 +161,27 @@ object BuildPlugin extends AutoPlugin {
     // scalastyle:on regex multiple.string.literals
   }
 
+  private[this] val CosmosClientPropertyName = {
+    "com.mesosphere.cosmos.test.CosmosIntegrationTestClient.CosmosClient.uri"
+  }
+
+  private[this] val DirectConnectionPropertyName = {
+    "com.mesosphere.cosmos.test.CosmosIntegrationTestClient.CosmosClient.direct"
+  }
+
+  private def saveClientCosmosProperty(value: String): Unit = {
+    saveSystemProperty(CosmosClientPropertyName, value)
+  }
+
+  private def loadClientCosmosProperty(): Option[String] = {
+    loadSystemProperty(CosmosClientPropertyName)
+  }
+
+  private def  saveDirectCosmosProperty(value: Boolean): Unit = {
+    saveSystemProperty(DirectConnectionPropertyName, value.toString)
+  }
+
+  private def bootCosmos(): Boolean = {
+    loadSystemProperty("com.mesosphere.cosmos.boot").map(_.toBoolean).getOrElse(true)
+  }
 }
