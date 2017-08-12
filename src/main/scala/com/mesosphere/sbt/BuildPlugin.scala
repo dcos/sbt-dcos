@@ -2,7 +2,6 @@ package com.mesosphere.sbt
 
 import com.github.retronym.SbtOneJar._
 import com.mesosphere.cosmos.CosmosIntegrationTestServer
-import com.mesosphere.cosmos.TestProperty
 import com.mesosphere.loadDcosUriSystemProperty
 import com.mesosphere.loadSystemProperty
 import com.mesosphere.saveSystemProperty
@@ -109,7 +108,7 @@ object BuildPlugin extends AutoPlugin {
   def itTestOptions(
     javaHomeValue: Option[File],
     oneJarValue: File,
-    additionalProperties: List[TestProperty],
+    additionalProperties: List[String],
     streamsValue: Keys.TaskStreams
   ): Seq[TestOption] = {
     if (bootCosmos()) {
@@ -171,7 +170,7 @@ object BuildPlugin extends AutoPlugin {
   }
 
   private def saveClientCosmosProperty(value: String): Unit = {
-    val ignored = saveSystemProperty(CosmosClientPropertyName, value)
+    saveSystemProperty(CosmosClientPropertyName, value)
   }
 
   private def loadClientCosmosProperty(): Option[String] = {
@@ -179,7 +178,7 @@ object BuildPlugin extends AutoPlugin {
   }
 
   private def  saveDirectCosmosProperty(value: Boolean): Unit = {
-    val ignored = saveSystemProperty(DirectConnectionPropertyName, value.toString)
+    saveSystemProperty(DirectConnectionPropertyName, value.toString)
   }
 
   private def bootCosmos(): Boolean = {

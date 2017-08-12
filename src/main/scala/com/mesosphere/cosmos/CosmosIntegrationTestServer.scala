@@ -18,7 +18,7 @@ import scala.util.Random
 final class CosmosIntegrationTestServer(
   javaHome: Option[String],
   oneJarPath: File,
-  additionalProperties: List[TestProperty]
+  additionalProperties: List[String]
 ) {
   private val originalProperties: Properties = System.getProperties
   private var process: Option[Process] = None           // scalastyle:ignore var.field
@@ -71,8 +71,9 @@ final class CosmosIntegrationTestServer(
       .getOrElse("java")
 
     val dcosUri = loadDcosUriSystemProperty()
-    val propertiesMap = additionalProperties.map { testProperty =>
-      testProperty -> loadSystemProperty(testProperty.propertyName).get
+    val propertiesMap = additionalProperties.map { name =>
+      val fullName = s"com.mesosphere.cosmos.$name"
+      fullName -> loadSystemProperty(fullName).get
     }
 
     val pathSeparator = System.getProperty("path.separator")
@@ -86,7 +87,7 @@ final class CosmosIntegrationTestServer(
       "com.simontuffs.onejar.Boot",
       s"-com.mesosphere.cosmos.zookeeperUri=$zkUri",
       s"-com.mesosphere.cosmos.dcosUri=$dcosUri"
-    ) ++ propertiesMap.map { case (testProperty, value) => s"-${testProperty.propertyName}=$value" }
+    ) ++ propertiesMap.map { case (name, value) => s"-$name=$value" }
   }
 
   def initZkCluster(logger: Logger): Unit = {

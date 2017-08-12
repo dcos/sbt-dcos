@@ -8,7 +8,6 @@ object Deps {
 
   // The plugins that BuildPlugin will provide to builds where it is used
   val plugins: Seq[ModuleID] = Seq(
-    "io.get-coursier" % "sbt-coursier" % "1.0.0-M15",           // APLv2.0
     "org.scala-sbt.plugins" % "sbt-onejar" % "0.8",             // MIT
     "org.scoverage" % "sbt-scoverage" % "1.5.0"                 // APLv2.0
   )

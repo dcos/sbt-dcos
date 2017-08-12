@@ -6,7 +6,7 @@ package object mesosphere {
   }
 
   def saveSystemProperty(key: String, value: String): Unit = {
-    val ignored = System.setProperty(key, value)
+    val _ = System.setProperty(key, value)
   }
 
   def loadDcosUriSystemProperty(): String = {
