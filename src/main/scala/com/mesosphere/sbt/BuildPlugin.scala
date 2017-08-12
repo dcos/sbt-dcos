@@ -104,7 +104,6 @@ object BuildPlugin extends AutoPlugin {
   /** This should be appended to (testOptions in IntegrationTest) */
   def itTestOptions(
     javaHomeValue: Option[File],
-    classpathPrefix: Seq[File],
     oneJarValue: File,
     additionalProperties: List[TestProperty],
     streamsValue: Keys.TaskStreams
@@ -117,7 +116,6 @@ object BuildPlugin extends AutoPlugin {
       val canonicalJavaHome = javaHomeValue.map(_.getCanonicalPath)
       lazy val itServer = new CosmosIntegrationTestServer(
         canonicalJavaHome,
-        classpathPrefix,
         oneJarValue,
         additionalProperties
       )
