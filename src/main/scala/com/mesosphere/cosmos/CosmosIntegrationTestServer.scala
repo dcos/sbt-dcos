@@ -14,6 +14,8 @@ import scala.concurrent.Future
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
 import scala.util.Random
+import scala.sys.process._
+
 
 final class CosmosIntegrationTestServer(
   javaHome: Option[String],
