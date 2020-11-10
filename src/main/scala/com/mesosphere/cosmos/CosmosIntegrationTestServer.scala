@@ -16,7 +16,6 @@ import scala.concurrent.duration._
 import scala.util.Random
 import scala.sys.process._
 
-
 final class CosmosIntegrationTestServer(
   javaHome: Option[String],
   oneJarPath: File,
@@ -33,30 +32,30 @@ final class CosmosIntegrationTestServer(
   }
 
   def runProcess(logger: Logger, cmd: Seq[String]): Unit = {
-    logger.info("Starting cosmos with command: " + cmd.mkString(" "))
-
-    val prefix = "<<cosmos-server>> "
-    val run = Process(cmd).run(new ProcessLogger() {
-      override def buffer[T](f: => T): T = logger.buffer(f)
-
-      override def error(s: => String): Unit = logger.info(prefix + s)
-
-      override def info(s: => String): Unit = logger.info(prefix + s)
-    })
-    val fExitValue = Future(run.exitValue())
-    process = Some(run)
-    try {
-      waitUntilTrue(60.seconds) {
-        if (fExitValue.isCompleted) {
-          throw new IllegalStateException("Cosmos Server has terminated.")
-        }
-        canConnectTo(logger, new URL("http://localhost:9990/admin/ping"))
-      }
-    } catch {
-      case t: Throwable =>
-        cleanup()
-        throw t
-    }
+//    logger.info("Starting cosmos with command: " + cmd.mkString(" "))
+//
+//    val prefix = "<<cosmos-server>> "
+//    val run = Process(cmd).run(new ProcessLogger() {
+//      override def buffer[T](f: => T): T = logger.buffer(f)
+//
+//      override def error(s: => String): Unit = logger.info(prefix + s)
+//
+//      override def info(s: => String): Unit = logger.info(prefix + s)
+//    })
+//    val fExitValue = Future(run.exitValue())
+//    process = Some(run)
+//    try {
+//      waitUntilTrue(60.seconds) {
+//        if (fExitValue.isCompleted) {
+//          throw new IllegalStateException("Cosmos Server has terminated.")
+//        }
+//        canConnectTo(logger, new URL("http://localhost:9990/admin/ping"))
+//      }
+//    } catch {
+//      case t: Throwable =>
+//        cleanup()
+//        throw t
+//    }
   }
 
   def createServerCommand(): Seq[String] = {

@@ -74,11 +74,11 @@ object Scalastyle {
   )
 
   val settings: Seq[Def.Setting[_]] = Seq(
-    scalastyle in (This, Global, This) := {
-      val ignore1 = (scalastyle in Compile).value
-      val ignore2 = (scalastyle in Test).value
-      (scalastyle in IntegrationTest).value
-    },
+//    scalastyle in (This, Global, This) := {
+//      val ignore1 = (scalastyle in Compile).value
+//      val ignore2 = (scalastyle in Test).value
+//      (scalastyle in IntegrationTest).value
+//    },
     scalastyleConfig in Global := None
   ) ++ Seq(Compile, Test, IntegrationTest).flatMap(inConfig(_)(genericSettings))
 

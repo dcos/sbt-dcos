@@ -1,6 +1,5 @@
 package com.mesosphere.sbt
 
-import com.github.retronym.SbtOneJar._
 import com.mesosphere.cosmos.CosmosIntegrationTestServer
 import com.mesosphere.loadDcosUriSystemProperty
 import com.mesosphere.loadSystemProperty
@@ -100,9 +99,9 @@ object BuildPlugin extends AutoPlugin {
   }
 
   /** This should be added to the subproject containing the main class. */
-  def allOneJarSettings(mainClassName: String): Seq[Def.Setting[_]] = {
-    oneJarSettings :+ (mainClass in oneJar := Some(mainClassName))
-  }
+//  def allOneJarSettings(mainClassName: String): Seq[Def.Setting[_]] = {
+//    oneJarSettings :+ (mainClass in oneJar := Some(mainClassName))
+//  }
 
   /** This should be appended to (testOptions in IntegrationTest) */
   def itTestOptions(
@@ -141,14 +140,15 @@ object BuildPlugin extends AutoPlugin {
 
   lazy val publishSettings: Seq[Def.Setting[_]] = Seq(
     publishMavenStyle := true,
-    pomIncludeRepository := { _ => false },
+    //Mesosphere users, ensure MAWS credentials are set to [default] in ~/.aws/config
     publishTo := {
-      val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot.value) {
-        Some("snapshots" at nexus + "content/repositories/snapshots")
-      } else {
-        Some("releases" at nexus + "service/local/staging/deploy/maven2")
-      }
+      //val repo = "s3://downloads.mesosphere.io"
+      //TODO@kjoshi switch this to production before release!
+      val repo = "s3://kjoshi-dev.s3.us-east-1.amazonaws.com"
+      if (version.value.endsWith("-SNAPSHOT"))
+          Some("Mesosphere Public Snapshot Repo (S3)" at s"${repo}/maven-snapshots")
+      else
+          Some("Mesosphere Public Snapshot Repo (S3)" at s"${repo}/maven")
     }
   )
 
